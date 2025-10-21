@@ -1,0 +1,1 @@
+export { CheckersPiece } from './CheckersPiece';
