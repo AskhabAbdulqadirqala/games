@@ -2,6 +2,6 @@
 Веб-игра в шашки.
 React + TypeScript + Vite + Tailwind.
 
-![interface](./about/interface.png)
+![interface](./public/interface.png)
 
 Команды запуска: npm i && npm run dev
