@@ -222,7 +222,6 @@ export const CheckersPage: FC = () => {
         {currentPlayer === WHITE_PIECE_CODE ? 'Ход белых' : 'Ход красных'}
       </div>
       <Board boardState={boardState} />
-      <Board boardState={boardState} />
     </div>
   );
 };
