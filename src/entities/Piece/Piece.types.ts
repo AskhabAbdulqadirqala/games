@@ -15,6 +15,7 @@ export interface PieceProps {
   color: PieceColor;
   className?: string;
   onClick?: () => void;
+  isRemoving?: boolean;
 }
 
 export type Position = { x: number; y: number };

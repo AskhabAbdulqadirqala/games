@@ -1,5 +1,5 @@
 import { FC, useState, useCallback } from 'react';
-import { cloneDeep, each, map, range } from 'lodash';
+import { cloneDeep, map, range } from 'lodash';
 
 import { Board } from '@widgets/Board';
 import { PieceColor, Position, PieceState } from '@entities/Piece';
@@ -94,7 +94,8 @@ const checkersToBoardState = (
   moveMarkers: Position[] = [],
   handleMove: (targetPos: Position, checkerId: string) => void = () => {},
   selectedCheckerId: string,
-  currentPlayer: number
+  currentPlayer: number,
+  removingCheckers: string[],
 ) => {
   const boardState: (PieceState | null)[][] = map(boardRange, () => 
     map(boardRange, () => null)
@@ -103,6 +104,7 @@ const checkersToBoardState = (
   checkers.forEach(checker => {
     const { x, y } = checker.position;
     const isClickable = checker.code === currentPlayer;
+    const isRemoving = removingCheckers.includes(checker.id);
     
     boardState[y][x] = {
       id: checker.id,
@@ -110,8 +112,9 @@ const checkersToBoardState = (
       PieceComponent: (
         <CheckersPiece
           color={checker.code === WHITE_PIECE_CODE ? PieceColor.WHITE : PieceColor.RED}
-          onClick={isClickable ? () => handlePieceClick(checker.id) : undefined}
-          isClickable={isClickable}
+          onClick={isClickable && !isRemoving ? () => handlePieceClick(checker.id) : undefined}
+          isClickable={isClickable && !isRemoving}
+          isRemoving={isRemoving}
         />
       ),
     };
@@ -132,10 +135,10 @@ const checkersToBoardState = (
 
 export const CheckersPage: FC = () => {
   const [checkers, setCheckers] = useState<Checker[]>(createInitialCheckers);
-  console.log(checkers)
   const [selectedCheckerId, setSelectedCheckerId] = useState<string>('');
   const [possibleMoves, setPossibleMoves] = useState<Position[]>([]);
-  const [currentPlayer, setCurrentPlayer] = useState<number>(WHITE_PIECE_CODE); // Белые ходят первыми
+  const [currentPlayer, setCurrentPlayer] = useState<number>(WHITE_PIECE_CODE);
+  const [removingCheckers, setRemovingCheckers] = useState<string[]>([]); // Состояние для удаляемых шашек
 
   const handlePieceClick = useCallback((id: string) => {
     const checker = checkers.find(c => c.id === id);
@@ -150,21 +153,19 @@ export const CheckersPage: FC = () => {
   }, [checkers, currentPlayer]);
 
   const handleMove = useCallback((targetPos: Position, checkerId: string) => {
+    let checkerToRemove: Checker | null = null;
+
     setCheckers(prevCheckers => {
       const newCheckers = cloneDeep(prevCheckers);
       const checkerIndex = newCheckers.findIndex(c => c.id === checkerId);
       
       if (checkerIndex !== -1) {
-        // Обновляем позицию шашки
-        newCheckers[checkerIndex].position = targetPos;
-
-        // Проверяем, был ли это ход со взятием
         const fromChecker = prevCheckers[checkerIndex];
         const dx = targetPos.x - fromChecker.position.x;
         const dy = targetPos.y - fromChecker.position.y;
         
+        // Проверяем взятие
         if (Math.abs(dx) === 2 && Math.abs(dy) === 2) {
-          // Удаляем съеденную шашку
           const eatenX = fromChecker.position.x + dx / 2;
           const eatenY = fromChecker.position.y + dy / 2;
           const eatenIndex = newCheckers.findIndex(
@@ -172,9 +173,21 @@ export const CheckersPage: FC = () => {
           );
 
           if (eatenIndex !== -1) {
-            newCheckers.splice(eatenIndex, 1);
+            checkerToRemove = newCheckers[eatenIndex];
+            // Добавляем шашку в список удаляемых для анимации
+            setRemovingCheckers(prev => [...prev, checkerToRemove!.id]);
+            // Удаляем из основного массива после анимации
+            setTimeout(() => {
+              setCheckers(currentCheckers => 
+                currentCheckers.filter(c => c.id !== checkerToRemove!.id)
+              );
+              setRemovingCheckers(prev => prev.filter(id => id !== checkerToRemove!.id));
+            }, 500); // Длительность анимации
           }
         }
+
+        // Обновляем позицию шашки
+        newCheckers[checkerIndex].position = targetPos;
 
         // Проверяем превращение в дамку
         const movedChecker = newCheckers[checkerIndex];
@@ -182,7 +195,6 @@ export const CheckersPage: FC = () => {
           (movedChecker.code === WHITE_PIECE_CODE && targetPos.y === BOARD_SIZE - 1) ||
           (movedChecker.code === RED_PIECE_CODE && targetPos.y === 0)
         ) {
-          // Здесь можно добавить логику превращения в дамку
           console.log(`Шашка ${movedChecker.id} превратилась в дамку!`);
         }
       }
@@ -205,7 +217,8 @@ export const CheckersPage: FC = () => {
     possibleMoves,
     handleMove,
     selectedCheckerId,
-    currentPlayer
+    currentPlayer,
+    removingCheckers
   );
 
   return (
