@@ -1,5 +1,6 @@
-import { FC, useState, useCallback } from 'react';
-import { cloneDeep, map, range } from 'lodash';
+import { FC, useCallback } from 'react';
+import { map, range } from 'lodash';
+import { useDispatch, useSelector } from 'react-redux';
 
 import { Board } from '@widgets/Board';
 import { PieceColor, Position, PieceState } from '@entities/Piece';
@@ -11,29 +12,24 @@ import { Checker } from './Checkers.types';
 
 import { BOARD_SIZE, WHITE_PIECE_CODE, RED_PIECE_CODE } from './config/constants';
 
+import {
+  selectCheckers,
+  selectSelectedCheckerId,
+  selectPossibleMoves,
+  selectCurrentPlayer,
+  selectRemovingCheckers,
+} from './store/selectors';
+import {
+  selectChecker,
+  setPossibleMoves,
+  moveChecker,
+  removeChecker,
+  addRemovingChecker,
+  removeRemovingChecker,
+  switchPlayer,
+} from './store/slice';
+
 const boardRange = range(BOARD_SIZE);
-
-const createInitialCheckers = () => {
-  const checkers: Checker[] = [];
-
-  for (let row = 0; row < BOARD_SIZE; row++) {
-    for (let col = 0; col < BOARD_SIZE; col++) {
-      const isBlackCell = (row + col) % 2 === 1;
-      const isWhitePiece = row < 3;
-      const isRedPiece = row > 4;
-
-      if (isBlackCell && (isWhitePiece || isRedPiece)) {
-        checkers.push({
-          id: `checker-${row}-${col}`,
-          code: isWhitePiece ? WHITE_PIECE_CODE : RED_PIECE_CODE,
-          position: { x: col, y: row }
-        });
-      }
-    }
-  }
-
-  return checkers;
-}
 
 const getPossibleMoves = (checkers: Checker[], fromY: number, fromX: number, currentPlayer: number) => {
   const moves: Position[] = [];
@@ -134,11 +130,12 @@ const checkersToBoardState = (
 }
 
 export const CheckersPage: FC = () => {
-  const [checkers, setCheckers] = useState<Checker[]>(createInitialCheckers);
-  const [selectedCheckerId, setSelectedCheckerId] = useState<string>('');
-  const [possibleMoves, setPossibleMoves] = useState<Position[]>([]);
-  const [currentPlayer, setCurrentPlayer] = useState<number>(WHITE_PIECE_CODE);
-  const [removingCheckers, setRemovingCheckers] = useState<string[]>([]); // Состояние для удаляемых шашек
+  const dispatch = useDispatch();
+  const checkers = useSelector(selectCheckers);
+  const selectedCheckerId = useSelector(selectSelectedCheckerId);
+  const possibleMoves = useSelector(selectPossibleMoves);
+  const currentPlayer = useSelector(selectCurrentPlayer);
+  const removingCheckers = useSelector(selectRemovingCheckers);
 
   const handlePieceClick = useCallback((id: string) => {
     const checker = checkers.find(c => c.id === id);
@@ -147,69 +144,54 @@ export const CheckersPage: FC = () => {
     // Проверяем, что кликнули на шашку текущего игрока
     if (checker.code !== currentPlayer) return;
 
-    setSelectedCheckerId(id);
+    dispatch(selectChecker(id));
     const moves = getPossibleMoves(checkers, checker.position.y, checker.position.x, currentPlayer);
-    setPossibleMoves(moves);
-  }, [checkers, currentPlayer]);
+    dispatch(setPossibleMoves(moves));
+  }, [checkers, currentPlayer, dispatch]);
 
   const handleMove = useCallback((targetPos: Position, checkerId: string) => {
-    let checkerToRemove: Checker | null = null;
+    const checker = checkers.find(c => c.id === checkerId);
+    if (!checker) {
+      return;
+    }
 
-    setCheckers(prevCheckers => {
-      const newCheckers = cloneDeep(prevCheckers);
-      const checkerIndex = newCheckers.findIndex(c => c.id === checkerId);
-      
-      if (checkerIndex !== -1) {
-        const fromChecker = prevCheckers[checkerIndex];
-        const dx = targetPos.x - fromChecker.position.x;
-        const dy = targetPos.y - fromChecker.position.y;
-        
-        // Проверяем взятие
-        if (Math.abs(dx) === 2 && Math.abs(dy) === 2) {
-          const eatenX = fromChecker.position.x + dx / 2;
-          const eatenY = fromChecker.position.y + dy / 2;
-          const eatenIndex = newCheckers.findIndex(
-            c => c.position.x === eatenX && c.position.y === eatenY
-          );
+    const dx = targetPos.x - checker.position.x;
+    const dy = targetPos.y - checker.position.y;
 
-          if (eatenIndex !== -1) {
-            checkerToRemove = newCheckers[eatenIndex];
-            // Добавляем шашку в список удаляемых для анимации
-            setRemovingCheckers(prev => [...prev, checkerToRemove!.id]);
-            // Удаляем из основного массива после анимации
-            setTimeout(() => {
-              setCheckers(currentCheckers => 
-                currentCheckers.filter(c => c.id !== checkerToRemove!.id)
-              );
-              setRemovingCheckers(prev => prev.filter(id => id !== checkerToRemove!.id));
-            }, 500); // Длительность анимации
-          }
-        }
+    // Проверяем взятие
+    if (Math.abs(dx) === 2 && Math.abs(dy) === 2) {
+      const eatenX = checker.position.x + dx / 2;
+      const eatenY = checker.position.y + dy / 2;
+      const eatenChecker = checkers.find(
+        c => c.position.x === eatenX && c.position.y === eatenY
+      );
 
-        // Обновляем позицию шашки
-        newCheckers[checkerIndex].position = targetPos;
-
-        // Проверяем превращение в дамку
-        const movedChecker = newCheckers[checkerIndex];
-        if (
-          (movedChecker.code === WHITE_PIECE_CODE && targetPos.y === BOARD_SIZE - 1) ||
-          (movedChecker.code === RED_PIECE_CODE && targetPos.y === 0)
-        ) {
-          console.log(`Шашка ${movedChecker.id} превратилась в дамку!`);
-        }
+      if (eatenChecker) {
+        dispatch(addRemovingChecker(eatenChecker.id));
+        setTimeout(() => {
+          dispatch(removeChecker(eatenChecker.id));
+          dispatch(removeRemovingChecker(eatenChecker.id));
+        }, 500);
       }
+    }
 
-      return newCheckers;
-    });
+    dispatch(moveChecker({ targetPos, checkerId }));
 
-    // Передаем ход другому игроку
-    setCurrentPlayer(prevPlayer => 
-      prevPlayer === WHITE_PIECE_CODE ? RED_PIECE_CODE : WHITE_PIECE_CODE
-    );
-    
-    setSelectedCheckerId('');
-    setPossibleMoves([]);
-  }, []);
+    // Проверка превращения в дамку
+    const movedChecker = checkers.find(c => c.id === checkerId);
+    if (movedChecker) {
+      if (
+        (movedChecker.code === WHITE_PIECE_CODE && targetPos.y === BOARD_SIZE - 1) ||
+        (movedChecker.code === RED_PIECE_CODE && targetPos.y === 0)
+      ) {
+        console.log(`Шашка ${movedChecker.id} превратилась в дамку!`);
+      }
+    }
+
+    dispatch(switchPlayer());
+    dispatch(selectChecker(''));
+    dispatch(setPossibleMoves([]));
+  }, [checkers, dispatch]);
 
   const boardState = checkersToBoardState(
     checkers,
