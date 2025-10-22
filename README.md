@@ -4,5 +4,32 @@ React + Redux + TypeScript + Vite + Tailwind + Node.js (Express, socket.io) + Je
 
 ![interface](./public/interface.png)
 
-Команды запуска фронта: npm i && npm run dev
-Команды запуска бэка: cd server && npm i && npm run start
+# Dev
+## Запуск приложения в Docker
+Необходимо иметь Make и Docker-compose:
+```shell
+# Запуск
+make start
+
+# Остановка
+make stop
+
+# Запуск в dev-режиме с логами
+make dev
+```
+
+## Локальная сборка и тесты
+Необходимо иметь Make и Node v20+:
+```shell
+# Установка зависимостей
+make install
+
+# Сборка
+make build
+
+# Запуск тестов
+make test
+
+# Очистка мусора
+make clean
+```
