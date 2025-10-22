@@ -1,6 +1,6 @@
 # About
 Веб-игра в шашки.
-React + TypeScript + Vite + Tailwind.
+React + Redux + TypeScript + Vite + Tailwind.
 
 ![interface](./public/interface.png)
 
