@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "tailwindcss init -p"
+    "preview": "tailwindcss init -p",
+    "test": "jest"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.9.1",
@@ -25,8 +26,10 @@
   "devDependencies": {
     "@eslint/js": "^9.36.0",
     "@tailwindcss/postcss": "^4.1.15",
+    "@types/jest": "^30.0.0",
     "@types/lodash": "^4.17.20",
-    "@types/node": "^24.6.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^24.9.1",
     "@types/react": "^19.1.16",
     "@types/react-dom": "^19.1.9",
     "@typescript-eslint/eslint-plugin": "^8.46.2",
@@ -41,7 +44,10 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.22",
     "globals": "^16.4.0",
+    "jest": "^30.2.0",
+    "jest-environment-jsdom": "^30.2.0",
     "postcss": "^8.5.6",
+    "ts-jest": "^29.4.5",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.45.0",
     "vite": "^7.1.7"
