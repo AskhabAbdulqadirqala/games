@@ -1,11 +1,5 @@
-import { Position } from "@entities/Piece";
-
-export interface Checker {
-  id: string;
-  code: number;
-  position: Position;
-  isKing?: boolean;
-}
+import { Position } from '@shared/types/board.types';
+import { Checker } from '@entities/Checker/Checker.types';
 
 export interface CheckersState {
   checkers: Checker[];

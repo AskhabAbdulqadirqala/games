@@ -17,5 +17,3 @@ export interface PieceProps {
   onClick?: () => void;
   isRemoving?: boolean;
 }
-
-export type Position = { x: number; y: number };

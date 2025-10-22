@@ -1,7 +1,12 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { CheckersState, Checker } from '../Checkers.types';
-import { Position } from '@entities/Piece';
-import { BOARD_SIZE, RED_PIECE_CODE, WHITE_PIECE_CODE } from '../config/constants';
+import { Checker } from '@entities/Checker/Checker.types';
+import { Position } from '@shared/types/board.types';
+import { CheckersState } from '../Checkers.types';
+import {
+  BOARD_SIZE,
+  RED_PIECE_CODE,
+  WHITE_PIECE_CODE,
+} from '../config/constants';
 
 const createInitialCheckers = () => {
   const checkers: Checker[] = [];
@@ -16,14 +21,14 @@ const createInitialCheckers = () => {
         checkers.push({
           id: `checker-${row}-${col}`,
           code: isWhitePiece ? WHITE_PIECE_CODE : RED_PIECE_CODE,
-          position: { x: col, y: row }
+          position: { x: col, y: row },
         });
       }
     }
   }
 
   return checkers;
-}
+};
 
 const initialState: CheckersState = {
   checkers: createInitialCheckers(),
@@ -43,26 +48,33 @@ export const checkersSlice = createSlice({
     setPossibleMoves: (state, action: PayloadAction<Position[]>) => {
       state.possibleMoves = action.payload;
     },
-    moveChecker: (state, action: PayloadAction<{ targetPos: Position; checkerId: string }>) => {
+    moveChecker: (
+      state,
+      action: PayloadAction<{ targetPos: Position; checkerId: string }>,
+    ) => {
       const { targetPos, checkerId } = action.payload;
-      const checkerIndex = state.checkers.findIndex(c => c.id === checkerId);
-      
+      const checkerIndex = state.checkers.findIndex((c) => c.id === checkerId);
+
       if (checkerIndex !== -1) {
         state.checkers[checkerIndex].position = targetPos;
       }
     },
     removeChecker: (state, action: PayloadAction<string>) => {
-      state.checkers = state.checkers.filter(c => c.id !== action.payload);
+      state.checkers = state.checkers.filter((c) => c.id !== action.payload);
     },
     addRemovingChecker: (state, action: PayloadAction<string>) => {
       state.removingCheckers.push(action.payload);
     },
     removeRemovingChecker: (state, action: PayloadAction<string>) => {
-      state.removingCheckers = state.removingCheckers.filter(id => id !== action.payload);
+      state.removingCheckers = state.removingCheckers.filter(
+        (id) => id !== action.payload,
+      );
     },
     switchPlayer: (state) => {
-      state.currentPlayer = state.currentPlayer === WHITE_PIECE_CODE ? 
-        RED_PIECE_CODE : WHITE_PIECE_CODE;
+      state.currentPlayer =
+        state.currentPlayer === WHITE_PIECE_CODE
+          ? RED_PIECE_CODE
+          : WHITE_PIECE_CODE;
     },
     resetGame: (state) => {
       state.checkers = createInitialCheckers();
@@ -70,6 +82,18 @@ export const checkersSlice = createSlice({
       state.possibleMoves = [];
       state.currentPlayer = WHITE_PIECE_CODE;
       state.removingCheckers = [];
+    },
+    updateGameState: (
+      state,
+      action: PayloadAction<{ checkers: Checker[] }>,
+    ) => {
+      state.checkers = action.payload.checkers;
+      state.selectedCheckerId = '';
+      state.possibleMoves = [];
+      state.currentPlayer =
+        state.currentPlayer === WHITE_PIECE_CODE
+          ? RED_PIECE_CODE
+          : WHITE_PIECE_CODE;
     },
   },
 });
@@ -83,6 +107,7 @@ export const {
   removeRemovingChecker,
   switchPlayer,
   resetGame,
+  updateGameState,
 } = checkersSlice.actions;
 
 export default checkersSlice.reducer;

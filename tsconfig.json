@@ -21,5 +21,6 @@
     },
     "types": ["vite/client"]
   },
-  "include": ["src", "vite.config.*"]
+  "include": ["src", "vite.config.*"],
+  "exclude": ["./server/*"]
 }

@@ -5,7 +5,6 @@ import { PieceProps } from './Piece.types';
 import { usePieceDragging } from './lib/hooks/usePieceDragging';
 import { ExplodeEffect } from './ui/ExplodeEffect';
 
-
 export const Piece: FC<PieceProps> = (props) => {
   const { color, className, onClick, isRemoving } = props;
   const { pieceRef, isDragging, handleMouseDown } = usePieceDragging(onClick);

@@ -1,5 +1,3 @@
-import { useEffect, useRef } from 'react';
-
 import { useExplodeEffect } from '../../lib/hooks/useExplodeEffect';
 
 interface Props {
